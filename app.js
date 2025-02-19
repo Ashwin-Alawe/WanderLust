@@ -16,6 +16,10 @@ const listingsRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
 
+if(process.env.NODE_ENV != "production"){
+    require('dotenv').config();
+}
+
 
 main().then(() =>{
     console.log("connected to DB");
@@ -60,7 +64,7 @@ passport.deserializeUser(User.deserializeUser());
 app.use((req, res, next) =>{
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
-    res.locals.currUser = req.user; 
+    res.locals.currUser = req.user;
     next();
 })
 
