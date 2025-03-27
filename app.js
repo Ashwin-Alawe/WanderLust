@@ -7,6 +7,7 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
 const session = require("express-session");
+const MongoStore = require('connect-mongo');
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -20,13 +21,18 @@ if(process.env.NODE_ENV != "production"){
     require('dotenv').config();
 }
 
+const dbUrl = process.env.ATLASDB_URL;
+// 'mongodb://127.0.0.1:27017/wanderlust';
+
+
+
 
 main().then(() =>{
     console.log("connected to DB");
 }) .catch(err => console.log(err));
 
 async function main() {
-  await mongoose.connect('mongodb://127.0.0.1:27017/wanderlust');
+  await mongoose.connect(dbUrl);
  }
 
  app.set("view engine", "ejs");
@@ -36,8 +42,21 @@ async function main() {
  app.engine('ejs', ejsMate);  
  app.use(express.static(path.join(__dirname, "/public")));
 
+ const store = MongoStore.create({
+    mongoUrl: dbUrl,
+    crypto: {
+        secret: process.env.SECRET,
+    },
+    touchAfter: 24 * 3600
+  });
+
+  store.on("error", ()=>{
+        console.log("Session Store Error", err);
+  })
+
  const sessionOptions = {
-    secret: "mysupersecretcode",
+    store,
+    secret: process.env.SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -47,9 +66,11 @@ async function main() {
     }
  }
 
-app.get("/", (req, res) =>{
-    res.send("Hi, I am root");
-})
+// app.get("/", (req, res) =>{
+//     res.send("Hi, I am root");
+// })
+
+
 
  app.use(session(sessionOptions));
  app.use(flash());
